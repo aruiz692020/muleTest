@@ -2,8 +2,11 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="        http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd        http://camel.apache.org/schema/spring       https://camel.apache.org/schema/spring/camel-spring.xsd">
     <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
+        <dataFormats>
+            <json id="jackson" library="Jackson" prettyPrint="true" unmarshalTypeName="org.mycompany.pojos.PersonPojo"/>
+        </dataFormats>
         <restConfiguration apiContextPath="/api-docs"
-            apiVendorExtension="true" bindingMode="auto"
+            apiVendorExtension="true" bindingMode="json"
             component="jetty" host="localhost" port="9090">
             <dataFormatProperty key="prettyPrint" value="true"/>
             <apiProperty key="cors" value="true"/>
@@ -13,9 +16,8 @@
         <rest apiDocs="true" enableCORS="true"
             id="rest-22b47cfa-8d27-4e19-89d6-56e2534d39f2"
             path="/customer" tag="test">
-            <put consumes="application/json,application/xml"
-                id="updatePet"
-                produces="application/xml,application/json" uri="/pet">
+            <put consumes="application/json" id="updatePet"
+                produces="application/json" uri="/pet">
                 <param
                     description="Pet object that needs to be added to the store"
                     name="body" required="true" type="body"/>
@@ -170,8 +172,11 @@
                     name="username" required="true" type="path"/>
                 <to uri="direct:deleteUser"/>
             </delete>
-            <get id="hello" uri="/Hello">
+            <get id="hello" produces="application/json" uri="/Hello">
                 <to uri="direct:hello"/>
+            </get>
+            <get id="hello2" uri="/index.html">
+                <to uri="direct:hello2"/>
             </get>
         </rest>
         <route id="simple-route">
@@ -181,12 +186,22 @@
             </setBody>
             <log id="route-log" message=">>> ${body}"/>
         </route>
-        <route id="hello">
-            <from id="_from1" uri="direct:hello"/>
-            <setBody id="_setBody1">
+        <route id="firstHello">
+            <from id="_to2" uri="direct:hello"/>
+            <bean beanType="org.mycompany.service.ServicePojo"
+                id="_bean1" method="getPojo"/>
+            <log id="_log2" message="${body}"/>
+            <marshal id="_marshal1">
+                <custom ref="jackson"/>
+            </marshal>
+            <log id="_log1" message="${body}"/>
+        </route>
+        <route id="SecondHello">
+            <from id="_from2" uri="direct:hello2"/>
+            <setBody id="_setBody2">
                 <constant>Hello World by Rest Call</constant>
             </setBody>
-            <log id="_log1" message="${body}"/>
+            <log id="_log12" message="${body}"/>
         </route>
     </camelContext>
 </beans>
